@@ -1,0 +1,1 @@
+import {authorized} from "../../../lib/auth";import {syncRss} from "../../../lib/rss";export async function POST(req:Request){if(!authorized(req))return Response.json({error:"Token de operador requerido (mínimo 24 caracteres)"},{status:401});try{return Response.json(await syncRss());}catch(e){return Response.json({error:e instanceof Error?e.message:"Error"},{status:503});}}
