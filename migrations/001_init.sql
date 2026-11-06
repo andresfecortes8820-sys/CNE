@@ -1,0 +1,17 @@
+BEGIN;
+CREATE TABLE IF NOT EXISTS sources(id text PRIMARY KEY,name text NOT NULL,status text NOT NULL CHECK(status IN ('connected','degraded','unavailable','demo')),last_sync timestamptz,last_attempt timestamptz,error text);
+INSERT INTO sources(id,name,status) VALUES('rss','El Tiempo Política RSS','unavailable') ON CONFLICT DO NOTHING;
+CREATE TABLE IF NOT EXISTS authors(id text PRIMARY KEY,name text NOT NULL);
+CREATE TABLE IF NOT EXISTS topics(id bigserial PRIMARY KEY,name text UNIQUE NOT NULL);
+CREATE TABLE IF NOT EXISTS tags(id bigserial PRIMARY KEY,name text UNIQUE NOT NULL);
+CREATE TABLE IF NOT EXISTS mentions(id text PRIMARY KEY,source_id text REFERENCES sources(id),published_at timestamptz NOT NULL,captured_at timestamptz DEFAULT now(),data jsonb NOT NULL);
+CREATE INDEX IF NOT EXISTS mentions_date ON mentions(published_at DESC);
+CREATE INDEX IF NOT EXISTS mentions_search ON mentions USING gin(to_tsvector('spanish',data->>'title'||' '||(data->>'summary')));
+CREATE TABLE IF NOT EXISTS metrics(id bigserial PRIMARY KEY,mention_id text REFERENCES mentions(id),captured_at timestamptz DEFAULT now(),data jsonb);
+CREATE TABLE IF NOT EXISTS users(id text PRIMARY KEY,role text CHECK(role IN ('admin','analyst','reader')) NOT NULL);
+CREATE TABLE IF NOT EXISTS alert_rules(id bigserial PRIMARY KEY,name text NOT NULL,threshold integer NOT NULL,enabled boolean DEFAULT true);
+CREATE TABLE IF NOT EXISTS alerts(id bigserial PRIMARY KEY,rule_id bigint REFERENCES alert_rules(id),fingerprint text UNIQUE NOT NULL,data jsonb,created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS reports(id bigserial PRIMARY KEY,data jsonb,created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS synchronizations(id bigserial PRIMARY KEY,source_id text REFERENCES sources(id),status text,inserted integer DEFAULT 0,error text,created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS audit(id bigserial PRIMARY KEY,actor text,action text,data jsonb,created_at timestamptz DEFAULT now());
+COMMIT;
