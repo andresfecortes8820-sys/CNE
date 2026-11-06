@@ -1,0 +1,4 @@
+import {test} from "node:test";import assert from "node:assert/strict";import {matches,filterMentions} from "../lib/search";import {demoData} from "../lib/demo";
+test("Boolean precedence and exact phrases",()=>{assert.ok(matches("CNE financiación","CNE AND financiación NOT fraude"));assert.ok(matches("Consejo Nacional Electoral","\"Consejo Nacional Electoral\" OR inexistente"));assert.equal(matches("cne fraude","CNE NOT fraude"),false);assert.ok(matches("cne","(CNE OR elecciones) NOT fraude"));assert.throws(()=>matches("x","x AND"));});
+test("Demo is explicitly synthetic and never links to real publications",()=>{assert.ok(demoData().every(x=>x.demo&&x.url===null));});
+test("Combined filters",()=>{const rows=filterMentions(demoData(),{query:"",platform:"X",sentiment:"",topic:"",days:7,from:"",to:"",dateField:"publishedAt",author:"",relevance:0});assert.ok(rows.length>0);assert.ok(rows.every(x=>x.platform==="X"));});
